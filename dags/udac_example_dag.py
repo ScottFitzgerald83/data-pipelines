@@ -9,19 +9,11 @@ from helpers import SqlQueries
 
 # AWS_KEY = os.environ.get('AWS_KEY')
 # AWS_SECRET = os.environ.get('AWS_SECRET')
-"""
-In the DAG, add default parameters according to these guidelines
-
-The DAG does not have dependencies on past runs
-On failure, the task are retried 3 times
-Retries happen every 5 minutes
-Catchup is turned off
-Do not email on retry
-"""
 
 default_args = {
     'owner': 'scott',
     'start_date': datetime(2019, 9, 20),
+    'depends_on_past': False,
     'retries': 3,
     'retry_delay': timedelta(minutes=5),
     'catchup': False,
