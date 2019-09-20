@@ -1,3 +1,9 @@
 .DS_Store
 venv/
 dwh.cfg
+__pycache__/
+.idea/
+logs/
+airflow-webserver.pid
+airflow.cfg
+airflow.db
