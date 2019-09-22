@@ -25,7 +25,7 @@ default_args = {
 with DAG('sparkify_etl_dag',
          default_args=default_args,
          description='S3 -> Redshift ETL for Sparkify songs and event data',
-         schedule_interval='@daily') as dag:
+         schedule_interval='@hourly') as dag:
 
     start_operator = DummyOperator(
         task_id='Begin_execution')
