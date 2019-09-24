@@ -11,12 +11,13 @@ from helpers import SqlQueries
 
 IAM_ROLE = BaseHook.get_connection("redshift").extra_dejson.get('iam_role')
 S3_BUCKET = 'udacity-dend'
-LOG_KEY = 'log_data'
+LOG_KEY = 'log-data'
 SONG_KEY = 'song_data'
+LOG_JSONPATH = 's3://udacity-dend/log_json_path.json'
 
 default_args = {
     'owner': 'scott',
-    'start_date': datetime(2019, 9, 22),
+    'start_date': datetime(2019, 9, 23),
     'depends_on_past': False,
     'retries': 3,
     'retry_delay': timedelta(minutes=5),
@@ -26,7 +27,7 @@ default_args = {
     'max_active_runs': 1
 }
 
-with DAG('sparkify_etl_dag_v002',
+with DAG('sparkify_etl_dag_v004',
          default_args=default_args,
          description='S3 -> Redshift ETL for Sparkify songs and event data',
          template_searchpath='/usr/local/airflow',
@@ -49,7 +50,8 @@ with DAG('sparkify_etl_dag_v002',
         iam_role=IAM_ROLE,
         s3_bucket=S3_BUCKET,
         s3_key=LOG_KEY,
-        table="events_stage"
+        table="events_stage",
+        json_format=LOG_JSONPATH
     )
 
     stage_songs_to_redshift = StageToRedshiftOperator(
@@ -64,36 +66,42 @@ with DAG('sparkify_etl_dag_v002',
     load_songplays_table = LoadFactOperator(
         task_id='Load_songplays_fact_table',
         conn_id="redshift",
-        sql=SqlQueries.songplay_table_insert
+        sql=SqlQueries.songplay_table_insert,
+        params={'table': 'songplays'}
     )
 
     load_user_dimension_table = LoadDimensionOperator(
         task_id='Load_user_dim_table',
         conn_id="redshift",
-        sql=SqlQueries.user_table_insert
+        sql=SqlQueries.user_table_insert,
+        params={'table': 'users'}
     )
 
     load_song_dimension_table = LoadDimensionOperator(
         task_id='Load_song_dim_table',
         conn_id="redshift",
-        sql=SqlQueries.song_table_insert
+        sql=SqlQueries.song_table_insert,
+        params={'table': 'songs'}
     )
 
     load_artist_dimension_table = LoadDimensionOperator(
         task_id='Load_artist_dim_table',
         conn_id="redshift",
-        sql=SqlQueries.artist_table_insert
+        sql=SqlQueries.artist_table_insert,
+        params={'table': 'artists'}
     )
 
     load_time_dimension_table = LoadDimensionOperator(
         task_id='Load_time_dim_table',
         conn_id="redshift",
-        sql=SqlQueries.time_table_insert
+        sql=SqlQueries.time_table_insert,
+        params={'table': 'time'}
     )
 
     run_quality_checks = DataQualityOperator(
         task_id='Run_data_quality_checks',
-        conn_id="redshift"
+        conn_id="redshift",
+        params={'tables': ['songplays', 'users', 'songs', 'artists', 'time']}
     )
 
     finish_operator = DummyOperator(
