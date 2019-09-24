@@ -11,7 +11,7 @@ from helpers import SqlQueries
 
 IAM_ROLE = BaseHook.get_connection("redshift").extra_dejson.get('iam_role')
 S3_BUCKET = 'udacity-dend'
-LOG_KEY = 'log-data'
+LOG_KEY = 'log_data'
 SONG_KEY = 'song_data'
 LOG_JSONPATH = 's3://udacity-dend/log_json_path.json'
 
@@ -27,7 +27,7 @@ default_args = {
     'max_active_runs': 1
 }
 
-with DAG('sparkify_etl_dag_v004',
+with DAG('sparkify_etl_dag',
          default_args=default_args,
          description='S3 -> Redshift ETL for Sparkify songs and event data',
          template_searchpath='/usr/local/airflow',
