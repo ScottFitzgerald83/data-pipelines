@@ -8,7 +8,6 @@ from airflow.operators.postgres_operator import PostgresOperator
 from airflow.operators import DataQualityOperator, LoadDimensionOperator, LoadFactOperator, StageToRedshiftOperator
 from helpers import SqlQueries
 
-
 IAM_ROLE = BaseHook.get_connection("redshift").extra_dejson.get('iam_role')
 S3_BUCKET = 'udacity-dend'
 LOG_KEY = 'log_data'
@@ -32,7 +31,6 @@ with DAG('sparkify_etl_dag',
          description='S3 -> Redshift ETL for Sparkify songs and event data',
          template_searchpath='/usr/local/airflow',
          schedule_interval='@daily') as dag:
-
     start_operator = DummyOperator(
         task_id='Begin_execution'
     )
@@ -47,20 +45,20 @@ with DAG('sparkify_etl_dag',
     stage_events_to_redshift = StageToRedshiftOperator(
         task_id='Stage_events',
         conn_id='redshift',
-        iam_role=IAM_ROLE,
-        s3_bucket=S3_BUCKET,
-        s3_key=LOG_KEY,
-        table="events_stage",
-        json_format=LOG_JSONPATH
+        params={'iam_role': IAM_ROLE,
+                's3_bucket': S3_BUCKET,
+                's3_key': LOG_KEY,
+                'table': "events_stage",
+                'json_format': LOG_JSONPATH}
     )
 
     stage_songs_to_redshift = StageToRedshiftOperator(
         task_id='Stage_songs',
         conn_id='redshift',
-        iam_role=IAM_ROLE,
-        s3_bucket=S3_BUCKET,
-        s3_key=SONG_KEY,
-        table="songs_stage"
+        params={'iam_role': IAM_ROLE,
+                's3_bucket': S3_BUCKET,
+                's3_key': SONG_KEY,
+                'table': "songs_stage"}
     )
 
     load_songplays_table = LoadFactOperator(
@@ -108,9 +106,9 @@ with DAG('sparkify_etl_dag',
         task_id='End_execution')
 
 start_operator \
-    >> create_tables_task \
-    >> [stage_events_to_redshift, stage_songs_to_redshift] \
-    >> load_songplays_table \
-    >> [load_user_dimension_table, load_song_dimension_table, load_artist_dimension_table, load_time_dimension_table] \
-    >> run_quality_checks \
-    >> finish_operator
+>> create_tables_task \
+>> [stage_events_to_redshift, stage_songs_to_redshift] \
+>> load_songplays_table \
+>> [load_user_dimension_table, load_song_dimension_table, load_artist_dimension_table, load_time_dimension_table] \
+>> run_quality_checks \
+>> finish_operator

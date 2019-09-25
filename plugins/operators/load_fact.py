@@ -19,6 +19,7 @@ class LoadFactOperator(BaseOperator):
     INSERT INTO {}
     {}
     """
+
     @apply_defaults
     def __init__(self,
                  conn_id="",

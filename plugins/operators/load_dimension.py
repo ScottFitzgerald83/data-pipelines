@@ -16,14 +16,16 @@ class LoadDimensionOperator(BaseOperator):
     """
     ui_color = '#80BD9E'
     insert_sql = """
-        INSERT INTO {}
-        {}
+    INSERT INTO {}
+    {}
         """
+
     @apply_defaults
     def __init__(self,
                  conn_id="",
                  sql="",
-                 *args, **kwargs):
+                 *args,
+                 **kwargs):
 
         super(LoadDimensionOperator, self).__init__(*args, **kwargs)
         self.conn_id = conn_id
