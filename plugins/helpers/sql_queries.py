@@ -7,7 +7,7 @@ class SqlQueries:
                 events.level, 
                 songs.song_id, 
                 songs.artist_id, 
-                events.session_id, 
+                events.session_id,
                 events.location, 
                 events.user_agent
                 FROM (SELECT TIMESTAMP 'epoch' + ts/1000 * interval '1 second' AS start_time, *
