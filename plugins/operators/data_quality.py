@@ -75,53 +75,57 @@ class DataQualityOperator(BaseOperator):
 
     def test_row_counts(self, tables):
         """
-        Tests whether a table contains rows after ETL and returns the number of rows.
+        Tests whether a table contains rows after ETL and returns the number of rows. A table fails if there are 0 rows.
         :param tables: a list of tables against which to run the check
         :return: If no rows exist returns an error; otherwise, count of rows
         """
+        test_name = 'test_row_counts'
+
         self.row_counts_failed = False
         redshift_hook = PostgresHook("redshift")
         for table in tables:
-            self.log.info(f"Running test_row_counts on {table}")
+            self.log.info(f"Running {test_name} on {table}")
             records = redshift_hook.get_records(f"SELECT COUNT(*) FROM {table}")
             if not records:
                 self.row_counts_failed = True
                 self.any_tests_failed = True
-                self.failed_tests.append(f"Row counts failed on {table}")
-                message = f"Data quality check failed. {table} returned no results"
+                self.failed_tests.append(f"{test_name} failed on {table}")
+                message = f"{test_name} failed. {table} returned no results"
             else:
-                message = f"Data quality on table {table} check passed with {records[0][0]} records"
+                message = f"{test_name} on table {table} passed with {records[0][0]} records"
 
             self.failed_tests.append(message) if self.row_counts_failed else self.row_counts_summary.append(message)
 
     def test_null_values(self, table, column):
         """
-        Determines how many of a column's rows are null
+        Determines how many of a column's rows are null. A column must consist of >70% to constitute a failure
         :param table: the table against which to run the check
         :param column: the column against which to run the check
         :return: If no rows exist returns an error; otherwise, count of rows
         """
+        test_name = 'test_null_values'
+
         self.null_counts_failed = False
         redshift_hook = PostgresHook("redshift")
         null_records = redshift_hook.get_records(f"SELECT COUNT(*) FROM {table} where {column} is null")
         all_records = redshift_hook.get_records(f"SELECT COUNT(*) FROM {table}")
+        self.log.info(f"Running {test_name} for {column} column in {table}")
 
-        self.log.info(f"Running test_null_values for {column} column in {table}")
         null_count = null_records[0][0]
         row_count = all_records[0][0]
-        pct_null = (null_count / row_count * 100)
-        pct_nonnull = 100 - pct_null
+        pct_null = ((null_count / row_count) * 100)
+        outcome = 'failed' if pct_null >= 70 else 'passed'
 
-        passed = True if pct_null < 10 else False
-        failed = not passed
-        outcome = 'passed' if passed else 'failed'
-
-        message = f"Data quality check on column {column} in table {table} {outcome} with {pct_nonnull:.2f}% of the records populated by non-null values"
-        if failed:
+        message = f"{test_name} on column {column} in table {table} {outcome}. " \
+                  f"{pct_null:.2f}% of the records are null"
+        # self.log.info(f"{column} {table} {null_count} {row_count} {pct_null}")
+        if outcome == 'failed':
             self.null_counts_failed = True
             self.any_tests_failed = True
+            self.null_failures.append(message)
+        else:
+            self.null_successes.append(message)
 
-        self.null_failures.append(message) if failed else self.null_successes.append(message)
         self.null_checks_summary.append(f"\nSUMMARY FOR {table} column {column}:")
         self.null_checks_summary.append(f"COUNT OF NULL ROWS: {null_count}")
         self.null_checks_summary.append(f"COUNT OF ALL ROWS: {row_count}")

@@ -88,12 +88,13 @@ class TestHelpers:
         'year',
         'weekday']
     tests_to_run = {'test_row_counts': table_names,
-                    'test_null_values': {'events_stage': events_stage_cols,
-                                         'songs_stage': songs_stage_cols,
-                                         'songplays': songplays_cols,
-                                         'users': users_cols,
-                                         'songs': songs_cols,
-                                         'artists': artists_cols,
-                                         'time': time_cols
-                                         }
+                    'test_null_values': {
+                        'events_stage': events_stage_cols,
+                        'songs_stage': songs_stage_cols,
+                        'songplays': songplays_cols,
+                        'users': users_cols,
+                        'songs': songs_cols,
+                        'artists': artists_cols,
+                        'time': time_cols
+                    }
                     }

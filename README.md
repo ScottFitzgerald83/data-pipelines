@@ -34,7 +34,7 @@ For example one test could be a SQL statement that checks if certain column cont
 * [Docker-compose](https://docs.docker.com/compose/install/)
 * Redshift cluster and credentials
   * See [this section](https://github.com/ScottFitzgerald83/data-warehousing#setting-up-the-cluster) and [this script](https://github.com/ScottFitzgerald83/data-warehousing/blob/master/utils/create_cluster.py) for a cluster-provisioning tool I like to use
-* Redshift credentials stored in environment variables or `.env` file
+* Redshift credentials stored in environment variables or `.env` file ([see below](https://github.com/ScottFitzgerald83/data-pipelines#setting-up-redshift-and-iam-credentials))
 
 ## Getting started
 After cloning the repository and setting up Docker and Redshift, you'll need to configure your Redshift connection and IAM role ARN.
@@ -63,7 +63,7 @@ IAM_ROLE = BaseHook.get_connection("redshift").extra_dejson.get('iam_role')
 ```
 
 ### Running the app with Docker 
- Next, you can create a container with `docker compose up -d`. This will launch the webserver and Postgres database in the background:
+ Next, you can create a container with `docker-compose up -d`. This will launch the webserver and Postgres database in the background:
 ```
 fitscott (master) data-pipelines
 $ docker-compose up -d
@@ -71,7 +71,7 @@ Starting data-pipelines_postgres_1 ... done
 Starting data-pipelines_webserver_1 ... done
 ```
 After launching the container, head over to the Airflow UI at `http://localhost:8080/admin/`.
-You should see the sparkify_etl DAG, which you can toggle to on to trigger the DAG:
+You should see the sparkify_etl DAG, which you can toggle to on to trigger:
 
 ![Airflow UI](airflow_ui.png)
 
