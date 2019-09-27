@@ -1,4 +1,0 @@
-cryptography
-ipython
-boto3
-psycopg2-binary==2.8.3
