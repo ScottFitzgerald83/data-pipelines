@@ -1,97 +1,90 @@
-BEGIN TRANSACTION;
-
-CREATE TABLE IF NOT EXISTS events_stage
+CREATE TABLE IF NOT EXISTS public.events_stage
 (
-    artist          VARCHAR ENCODE ZSTD,
-    auth            VARCHAR ENCODE ZSTD,
-    first_name      VARCHAR ENCODE ZSTD,
-    gender          VARCHAR ENCODE ZSTD,
-    item_in_session INTEGER ENCODE ZSTD,
-    last_name       VARCHAR ENCODE ZSTD,
-    length          DOUBLE PRECISION ENCODE ZSTD,
-    level           VARCHAR ENCODE ZSTD,
-    location        VARCHAR ENCODE ZSTD,
-    method          VARCHAR ENCODE ZSTD,
-    page            VARCHAR ENCODE ZSTD,
-    registration    DOUBLE PRECISION ENCODE ZSTD,
-    session_id      INTEGER ENCODE ZSTD,
-    song            VARCHAR ENCODE ZSTD,
-    status          VARCHAR ENCODE ZSTD,
-    ts              BIGINT ENCODE ZSTD,
-    user_agent      VARCHAR ENCODE ZSTD,
-    user_id         INTEGER ENCODE ZSTD
+    artist        varchar(256),
+    auth          varchar(256),
+    first_name     varchar(256),
+    gender        varchar(256),
+    item_in_session int4,
+    last_name      varchar(256),
+    length        numeric(18, 0),
+    "level"       varchar(256),
+    location      varchar(256),
+    "method"      varchar(256),
+    page          varchar(256),
+    registration  numeric(18, 0),
+    session_id     int4,
+    song          varchar(256),
+    status        int4,
+    ts            int8,
+    user_agent     varchar(256),
+    user_id        int4
 );
 
-CREATE TABLE IF NOT EXISTS songs_stage
+CREATE TABLE IF NOT EXISTS public.songs_stage
 (
-    artist_id        VARCHAR ENCODE ZSTD,
-    artist_latitude  DOUBLE PRECISION ENCODE ZSTD,
-    artist_location  VARCHAR ENCODE ZSTD,
-    artist_longitude DOUBLE PRECISION ENCODE ZSTD,
-    artist_name      VARCHAR ENCODE ZSTD,
-    duration         DOUBLE PRECISION ENCODE ZSTD,
-    num_songs        INTEGER ENCODE ZSTD,
-    song_id          VARCHAR ENCODE ZSTD,
-    title            VARCHAR ENCODE ZSTD,
-    year             INTEGER ENCODE ZSTD
+    num_songs        int4,
+    artist_id        varchar(256),
+    artist_name      varchar(256),
+    artist_latitude  numeric(18, 0),
+    artist_longitude numeric(18, 0),
+    artist_location  varchar(256),
+    song_id          varchar(256),
+    title            varchar(256),
+    duration         numeric(18, 0),
+    "year"           int4
 );
 
-CREATE TABLE IF NOT EXISTS songplays
+CREATE TABLE IF NOT EXISTS public.songplays
 (
-    songplay_id VARCHAR(254) ENCODE ZSTD,
-    start_time  TIMESTAMP ENCODE DELTA32K,
-    user_id     INTEGER ENCODE ZSTD,
-    level       VARCHAR ENCODE ZSTD,
-    song_id     VARCHAR ENCODE ZSTD,
-    artist_id   VARCHAR ENCODE ZSTD,
-    session_id  INTEGER ENCODE ZSTD,
-    location    VARCHAR ENCODE ZSTD,
-    user_agent  VARCHAR ENCODE ZSTD,
-    PRIMARY KEY (songplay_id)
+    play_id     varchar(32) NOT NULL,
+    start_time timestamp   NOT NULL,
+    user_id     int4        NOT NULL,
+    "level"    varchar(256),
+    song_id     varchar(256),
+    artist_id   varchar(256),
+    session_id  int4,
+    location   varchar(256),
+    user_agent varchar(256),
+    CONSTRAINT songplays_pkey PRIMARY KEY (play_id)
 );
 
-CREATE TABLE IF NOT EXISTS users
+CREATE TABLE IF NOT EXISTS public.users
 (
-    user_id    INTEGER NOT NULL ENCODE ZSTD,
-    first_name VARCHAR NOT NULL ENCODE ZSTD,
-    last_name  VARCHAR NOT NULL ENCODE ZSTD,
-    gender     VARCHAR ENCODE ZSTD,
-    level      VARCHAR ENCODE ZSTD,
-    PRIMARY KEY (user_id)
-)
-    DISTSTYLE ALL;
-
-CREATE TABLE IF NOT EXISTS songs
-(
-    song_id   VARCHAR NOT NULL ENCODE ZSTD,
-    title     VARCHAR ENCODE ZSTD,
-    artist_id VARCHAR NOT NULL ENCODE ZSTD,
-    year      INTEGER ENCODE ZSTD,
-    duration  DOUBLE PRECISION ENCODE ZSTD,
-    PRIMARY KEY (song_id)
-)
-    SORTKEY (title);
-
-CREATE TABLE IF NOT EXISTS artists
-(
-    artist_id VARCHAR NOT NULL ENCODE ZSTD,
-    name      VARCHAR NOT NULL ENCODE ZSTD,
-    location  VARCHAR ENCODE ZSTD,
-    latitude  DOUBLE PRECISION ENCODE ZSTD,
-    longitude DOUBLE PRECISION ENCODE ZSTD,
-    PRIMARY KEY (artist_id)
+    user_id     int4 NOT NULL,
+    first_name varchar(256),
+    last_name  varchar(256),
+    gender     varchar(256),
+    "level"    varchar(256),
+    CONSTRAINT users_pkey PRIMARY KEY (user_id)
 );
 
-CREATE TABLE IF NOT EXISTS time
+CREATE TABLE IF NOT EXISTS public.songs
 (
-    start_time TIMESTAMP NOT NULL ENCODE DELTA32K,
-    hour       INTEGER ENCODE ZSTD,
-    day        INTEGER ENCODE ZSTD,
-    week       INTEGER ENCODE ZSTD,
-    month      INTEGER ENCODE ZSTD,
-    year       INTEGER ENCODE ZSTD,
-    weekday    INTEGER ENCODE ZSTD,
-    PRIMARY KEY (start_time)
+    song_id   varchar(256) NOT NULL,
+    title    varchar(256),
+    artist_id varchar(256),
+    "year"   int4,
+    duration numeric(18, 0),
+    CONSTRAINT songs_pkey PRIMARY KEY (song_id)
 );
 
-END TRANSACTION;
+CREATE TABLE IF NOT EXISTS public.artists
+(
+    artist_id  varchar(256) NOT NULL,
+    name      varchar(256),
+    location  varchar(256),
+    latitude numeric(18, 0),
+    longitude numeric(18, 0)
+);
+
+CREATE TABLE IF NOT EXISTS public."time"
+(
+    start_time timestamp NOT NULL,
+    "hour"     int4,
+    "day"      int4,
+    week       int4,
+    "month"    varchar(256),
+    "year"     int4,
+    weekday    varchar(256),
+    CONSTRAINT time_pkey PRIMARY KEY (start_time)
+);
