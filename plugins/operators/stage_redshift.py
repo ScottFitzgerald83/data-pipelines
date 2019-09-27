@@ -1,11 +1,10 @@
-import logging
-
 from airflow.hooks.postgres_hook import PostgresHook
 from airflow.models import BaseOperator
 from airflow.utils.decorators import apply_defaults
 
 
 class StageToRedshiftOperator(BaseOperator):
+    #TODO: add param for date partitions
     """
     The stage operator is expected to be able to load any JSON formatted files from S3 to Amazon Redshift.
     The operator creates and runs a SQL COPY statement based on the parameters provided. The operator's
@@ -14,14 +13,6 @@ class StageToRedshiftOperator(BaseOperator):
     The parameters should be used to distinguish between JSON file. Another important requirement of the
     stage operator is containing a templated field that allows it to load timestamped files from S3 based on the
     execution time and run backfills.
-
-    /****************************************************************************
-    Note: For AWS IAM authentication, use iam in the extra connection parameters
-    and set it to true. Leave the password field empty. This will use the the
-    "aws_default" connection to get the temporary token unless you override
-    in extras.
-    extras example: ``{"iam":true, "aws_conn_id":"my_aws_conn"}``
-    ****************************************************************************/
     """
     ui_color = '#358140'
     template_fields = ("s3_key",)
@@ -30,6 +21,7 @@ class StageToRedshiftOperator(BaseOperator):
             FROM '{}'
             IAM_ROLE '{}'
             FORMAT AS JSON '{}'
+            {}
         """
 
     @apply_defaults
@@ -39,12 +31,16 @@ class StageToRedshiftOperator(BaseOperator):
                  *args,
                  **kwargs):
         super(StageToRedshiftOperator, self).__init__(*args, **kwargs)
+
+        if params is None:
+            params = {}
         self.conn_id = conn_id
         self.iam_role = params.get('iam_role', None)
         self.s3_bucket = params.get('s3_bucket', None)
         self.s3_key = params.get('s3_key', None)
         self.table = params.get('table', None)
         self.json_format = params.get('json_format', 'auto')
+        self.additional_options = params.get('options', '')
 
     def execute(self, context):
         redshift = PostgresHook(postgres_conn_id=self.conn_id)
@@ -58,6 +54,7 @@ class StageToRedshiftOperator(BaseOperator):
             self.table,
             s3_path,
             self.iam_role,
-            self.json_format
+            self.json_format,
+            self.additional_options
         )
         redshift.run(formatted_sql)

@@ -36,6 +36,31 @@ CREATE TABLE IF NOT EXISTS songs_stage
     year             INTEGER ENCODE ZSTD
 );
 
+CREATE TABLE IF NOT EXISTS songplays
+(
+    songplay_id VARCHAR(254) ENCODE ZSTD,
+    start_time  TIMESTAMP ENCODE DELTA32K,
+    user_id     INTEGER ENCODE ZSTD,
+    level       VARCHAR ENCODE ZSTD,
+    song_id     VARCHAR ENCODE ZSTD,
+    artist_id   VARCHAR ENCODE ZSTD,
+    session_id  INTEGER ENCODE ZSTD,
+    location    VARCHAR ENCODE ZSTD,
+    user_agent  VARCHAR ENCODE ZSTD,
+    PRIMARY KEY (songplay_id)
+);
+
+CREATE TABLE IF NOT EXISTS users
+(
+    user_id    INTEGER NOT NULL ENCODE ZSTD,
+    first_name VARCHAR NOT NULL ENCODE ZSTD,
+    last_name  VARCHAR NOT NULL ENCODE ZSTD,
+    gender     VARCHAR ENCODE ZSTD,
+    level      VARCHAR ENCODE ZSTD,
+    PRIMARY KEY (user_id)
+)
+    DISTSTYLE ALL;
+
 CREATE TABLE IF NOT EXISTS songs
 (
     song_id   VARCHAR NOT NULL ENCODE ZSTD,
@@ -57,17 +82,6 @@ CREATE TABLE IF NOT EXISTS artists
     PRIMARY KEY (artist_id)
 );
 
-CREATE TABLE IF NOT EXISTS users
-(
-    user_id    INTEGER NOT NULL ENCODE ZSTD,
-    first_name VARCHAR NOT NULL ENCODE ZSTD,
-    last_name  VARCHAR NOT NULL ENCODE ZSTD,
-    gender     VARCHAR ENCODE ZSTD,
-    level      VARCHAR ENCODE ZSTD,
-    PRIMARY KEY (user_id)
-)
-    DISTSTYLE ALL;
-
 CREATE TABLE IF NOT EXISTS time
 (
     start_time TIMESTAMP NOT NULL ENCODE DELTA32K,
@@ -78,20 +92,6 @@ CREATE TABLE IF NOT EXISTS time
     year       INTEGER ENCODE ZSTD,
     weekday    INTEGER ENCODE ZSTD,
     PRIMARY KEY (start_time)
-);
-
-CREATE TABLE IF NOT EXISTS songplays
-(
-    songplay_id VARCHAR (254) ENCODE ZSTD,
-    start_time  TIMESTAMP ENCODE DELTA32K,
-    user_id     INTEGER ENCODE ZSTD,
-    level       VARCHAR ENCODE ZSTD,
-    song_id     VARCHAR ENCODE ZSTD,
-    artist_id   VARCHAR ENCODE ZSTD,
-    session_id  INTEGER ENCODE ZSTD,
-    location    VARCHAR ENCODE ZSTD,
-    user_agent  VARCHAR ENCODE ZSTD,
-    PRIMARY KEY (songplay_id)
 );
 
 END TRANSACTION;
