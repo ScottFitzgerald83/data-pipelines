@@ -19,15 +19,15 @@ SECRET = config.get('AWS', 'SECRET')
 REGION_NAME = config.get('AWS', 'REGION_NAME')
 
 # Set cluster provisioning details
-DWH_CLUSTER_TYPE = config.get('REDSHIFT', "CLUSTER_TYPE")
-DWH_NUM_NODES = config.get('REDSHIFT', "NUM_NODES")
-DWH_NODE_TYPE = config.get('REDSHIFT', "NODE_TYPE")
-DWH_CLUSTER_IDENTIFIER = config.get('REDSHIFT', "CLUSTER_IDENTIFIER")
-DWH_DB = config.get('REDSHIFT', "DB")
-DWH_DB_USER = config.get('REDSHIFT', "DB_USER")
-DWH_DB_PASSWORD = config.get('REDSHIFT', "DB_PASSWORD")
-DWH_PORT = config.get('REDSHIFT', "PORT")
-DWH_IAM_ROLE_NAME = config.get('REDSHIFT', "IAM_ROLE_NAME")
+CLUSTER_TYPE = config.get('REDSHIFT', "CLUSTER_TYPE")
+NUM_NODES = config.get('REDSHIFT', "NUM_NODES")
+NODE_TYPE = config.get('REDSHIFT', "NODE_TYPE")
+CLUSTER_IDENTIFIER = config.get('REDSHIFT', "CLUSTER_IDENTIFIER")
+DB_NAME = config.get('REDSHIFT', "DB_NAME")
+DB_USER = config.get('REDSHIFT', "DB_USER")
+DB_PASSWORD = config.get('REDSHIFT', "DB_PASSWORD")
+PORT = config.get('REDSHIFT', "PORT")
+IAM_ROLE_NAME = config.get('REDSHIFT', "IAM_ROLE_NAME")
 
 # create clients to interact with aws
 ec2 = boto3.resource('ec2', region_name=REGION_NAME, aws_access_key_id=KEY, aws_secret_access_key=SECRET)
@@ -96,19 +96,19 @@ def create_cluster(role_arn):
     """
     # Num nodes must not be included when instantiating single-node "clusters"
     # If num_nodes is 1, then we don't pass this parameter to the boto client
-    if int(DWH_NUM_NODES) > 1:
+    if int(NUM_NODES) > 1:
         try:
             response = redshift.create_cluster(
-                ClusterType=DWH_CLUSTER_TYPE,
-                NodeType=DWH_NODE_TYPE,
-                NumberOfNodes=int(DWH_NUM_NODES),
-                DBName=DWH_DB,
-                ClusterIdentifier=DWH_CLUSTER_IDENTIFIER,
-                MasterUsername=DWH_DB_USER,
-                MasterUserPassword=DWH_DB_PASSWORD,
+                ClusterType=CLUSTER_TYPE,
+                NodeType=NODE_TYPE,
+                NumberOfNodes=int(NUM_NODES),
+                DBName=DB_NAME,
+                ClusterIdentifier=CLUSTER_IDENTIFIER,
+                MasterUsername=DB_USER,
+                MasterUserPassword=DB_PASSWORD,
                 IamRoles=[role_arn]
             )
-            print(f'Creating {DWH_CLUSTER_TYPE} cluster with {DWH_NUM_NODES} nodes named {DWH_CLUSTER_IDENTIFIER}')
+            print(f'Creating {CLUSTER_TYPE} cluster with {NUM_NODES} nodes named {CLUSTER_IDENTIFIER}')
             return response
 
         except Exception as e:
@@ -116,15 +116,15 @@ def create_cluster(role_arn):
     else:
         try:
             response = redshift.create_cluster(
-                ClusterType=DWH_CLUSTER_TYPE,
-                NodeType=DWH_NODE_TYPE,
-                DBName=DWH_DB,
-                ClusterIdentifier=DWH_CLUSTER_IDENTIFIER,
-                MasterUsername=DWH_DB_USER,
-                MasterUserPassword=DWH_DB_PASSWORD,
+                ClusterType=CLUSTER_TYPE,
+                NodeType=NODE_TYPE,
+                DBName=DB_NAME,
+                ClusterIdentifier=CLUSTER_IDENTIFIER,
+                MasterUsername=DB_USER,
+                MasterUserPassword=DB_PASSWORD,
                 IamRoles=[role_arn]
             )
-            print(f'Creating {DWH_CLUSTER_TYPE} cluster with named {DWH_CLUSTER_IDENTIFIER}')
+            print(f'Creating {CLUSTER_TYPE} cluster with named {CLUSTER_IDENTIFIER}')
             return response
 
         except Exception as e:
@@ -154,8 +154,8 @@ def wait_for_cluster(cluster_identifier, target_status, interval=30):
     print(f'Current cluster status is {cluster_status}. Exiting.')
     if cluster_status == 'available':
         endpoint, role_arn = cluster_properties['Endpoint']['Address'], cluster_properties['IamRoles'][0]['IamRoleArn']
-        print(f"DWH_ENDPOINT: {endpoint}")
-        print(f"DWH_ROLE_ARN: {role_arn}")
+        print(f"ENDPOINT: {endpoint}")
+        print(f"ROLE_ARN: {role_arn}")
         return cluster_properties, endpoint, role_arn
     return None
 
@@ -245,25 +245,24 @@ def clean_up_cluster_and_role(wait=True, skip_snapshot=True, interval=30):
     :param interval: True reports on the status of deletion and hold execution
     :return: None
     """
-    delete_cluster(DWH_CLUSTER_IDENTIFIER, skip_snapshot)
+    delete_cluster(CLUSTER_IDENTIFIER, skip_snapshot)
     if wait:
         try:
-            wait_for_cluster(DWH_CLUSTER_IDENTIFIER, 'deleted', interval)
+            wait_for_cluster(CLUSTER_IDENTIFIER, 'deleted', interval)
         except Exception as e:
             print(e)
-    detach_role_policy(DWH_IAM_ROLE_NAME)
-    delete_role(DWH_IAM_ROLE_NAME)
+    detach_role_policy(IAM_ROLE_NAME)
+    delete_role(IAM_ROLE_NAME)
 
 
 def main():
     """Creates an iam role, attaches s3 and redshift read only policies to it, stands up a redshift cluster, and opens
     a port so it can be accessed."""
-    create_iam_role(DWH_IAM_ROLE_NAME)
-    attach_s3_and_redshift_policies(DWH_IAM_ROLE_NAME)
-    role_arn = get_arn(DWH_IAM_ROLE_NAME)
+    create_iam_role(IAM_ROLE_NAME)
+    attach_s3_and_redshift_policies(IAM_ROLE_NAME)
+    role_arn = get_arn(IAM_ROLE_NAME)
     create_cluster(role_arn)
-    wait_for_cluster(DWH_CLUSTER_IDENTIFIER, 'available')
-    cluster_props, endpoint, role_arn = wait_for_cluster(DWH_CLUSTER_IDENTIFIER, target_status='available')
+    cluster_props, endpoint, role_arn = wait_for_cluster(CLUSTER_IDENTIFIER, target_status='available')
     open_port(cluster_props)
 
 

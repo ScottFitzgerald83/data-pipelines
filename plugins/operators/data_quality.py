@@ -1,6 +1,3 @@
-import logging
-import textwrap
-
 from airflow.hooks.postgres_hook import PostgresHook
 from airflow.models import BaseOperator
 from airflow.utils.decorators import apply_defaults
@@ -32,10 +29,12 @@ class DataQualityOperator(BaseOperator):
         self.failed_tests = []
         self.row_counts_summary = []
         self.null_checks_summary = []
+        self.null_successes = []
+        self.null_failures = []
 
     def execute(self, context):
         tests_to_run = context["params"]["tests_to_run"]
-        self.log.info(f"Received the following tests from the caller: {tests_to_run}")
+        self.log.info(f"Preparing the following tests: {tests_to_run}")
         if 'test_row_counts' in tests_to_run:
             self.test_row_counts(tests_to_run['test_row_counts'])
         if 'test_null_values' in tests_to_run:
@@ -54,10 +53,11 @@ class DataQualityOperator(BaseOperator):
         message = f"""
         {TestHelpers.quality_checks_box}
         {newline.join(self.row_counts_summary)}
+        {newline.join(self.null_successes)}
         {newline.join(self.null_checks_summary)}
         {TestHelpers.end_block}
         """
-        self.log.info(textwrap.dedent(message))
+        self.log.info(message)
 
     def display_failed_results(self):
         """
@@ -68,9 +68,10 @@ class DataQualityOperator(BaseOperator):
         message = f"""
         {TestHelpers.failed_summary_box}
         {newline.join(self.failed_tests)}
+        {newline.join(self.null_failures)}
         {TestHelpers.end_block}
         """
-        self.log.error(textwrap.dedent(message))
+        self.log.error(message)
 
     def test_row_counts(self, tables):
         """
@@ -90,10 +91,7 @@ class DataQualityOperator(BaseOperator):
                 message = f"Data quality check failed. {table} returned no results"
             else:
                 message = f"Data quality on table {table} check passed with {records[0][0]} records"
-            row_count = records[0][0] if records else 0
 
-            self.row_counts_summary.append(f"SUMMARY FOR {table}:")
-            self.row_counts_summary.append(f"COUNT OF ROWS: {row_count}")
             self.failed_tests.append(message) if self.row_counts_failed else self.row_counts_summary.append(message)
 
     def test_null_values(self, table, column):
@@ -112,18 +110,19 @@ class DataQualityOperator(BaseOperator):
         null_count = null_records[0][0]
         row_count = all_records[0][0]
         pct_null = (null_count / row_count * 100)
-        pct_passing = 100 - pct_null
+        pct_nonnull = 100 - pct_null
 
-        if pct_null <= 50:
-            message = f"Data quality on table {table} check passed with {pct_passing:.2f}% of the records populated by non-null values"
-        else:
-            message = f"Data quality check failed. More than 50% of the rows in {table} are null for the {column} column"
+        passed = True if pct_null < 10 else False
+        failed = not passed
+        outcome = 'passed' if passed else 'failed'
+
+        message = f"Data quality check on column {column} in table {table} {outcome} with {pct_nonnull:.2f}% of the records populated by non-null values"
+        if failed:
             self.null_counts_failed = True
             self.any_tests_failed = True
-            self.failed_tests.append(f"Null checks failed on {table} for {column}")
 
-        self.null_checks_summary.append(f"SUMMARY FOR {table} column {column}:")
+        self.null_failures.append(message) if failed else self.null_successes.append(message)
+        self.null_checks_summary.append(f"\nSUMMARY FOR {table} column {column}:")
         self.null_checks_summary.append(f"COUNT OF NULL ROWS: {null_count}")
         self.null_checks_summary.append(f"COUNT OF ALL ROWS: {row_count}")
         self.null_checks_summary.append(f"PERCENT NULL: {pct_null:.2f}%")
-        self.failed_tests.append(message) if self.null_counts_failed else self.null_checks_summary.append(message)

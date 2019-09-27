@@ -12,7 +12,7 @@ class LoadDimensionOperator(BaseOperator):
     Dimension loads are often done with the truncate-insert pattern where the target table is emptied before the load.
     Thus, you could also have a parameter that allows switching between insert modes when loading dimensions.
     """
-    ui_color = '#F98866'
+    ui_color = '#80BD9E'
     append_sql = "INSERT INTO {} {}"
 
     @apply_defaults
