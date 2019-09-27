@@ -20,8 +20,8 @@ default_args = {
     'owner': 'scott',
     'depends_on_past': False,
     'start_date': datetime(2019, 9, 26),
-    'retries': 3,
-    'retry_delay': timedelta(minutes=5),
+    'retries': 5,
+    'retry_delay': timedelta(minutes=3),
     'catchup': False,
     'email_on_retry': False,
 }
