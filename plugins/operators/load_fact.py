@@ -1,5 +1,3 @@
-import logging
-
 from airflow.hooks.postgres_hook import PostgresHook
 from airflow.models import BaseOperator
 from airflow.utils.decorators import apply_defaults
@@ -15,33 +13,28 @@ class LoadFactOperator(BaseOperator):
     Fact tables are usually so massive that they should only allow append type functionality.
     """
     ui_color = '#F98866'
-    append_sql = """
-    INSERT INTO {}
-    {}
-    """
+    append_sql = "INSERT INTO {} {}"
 
     @apply_defaults
     def __init__(self,
-                 conn_id="",
+                 conn_id="redshift",
                  sql="",
+                 params=None,
                  *args,
                  **kwargs):
 
         super(LoadFactOperator, self).__init__(*args, **kwargs)
+
         self.conn_id = conn_id
         self.sql = sql
+        self.truncate = params.get('truncate', False)
+        self.table = params.get('table', None)
 
     def execute(self, context):
-        try:
-            table = context['params']['table']
-        except KeyError:
-            logging.error(msg="Table not found in context", exc_info=True)
-            logging.info(f'context: {context}')
-
         redshift = PostgresHook(postgres_conn_id=self.conn_id)
+        if self.truncate:
+            self.log.info(f"Clearing data from table {self.table}")
+            redshift.run(f"DELETE FROM {self.table}")
 
-        self.log.info("Clearing data from table {table}")
-        redshift.run(f"DELETE FROM {table}")
-
-        self.log.info(f"Loading data into destination Redshift table {table}")
-        redshift.run(LoadFactOperator.append_sql.format(table, self.sql))
+        self.log.info(f"Loading data into destination Redshift table {self.table}")
+        redshift.run(LoadFactOperator.append_sql.format(self.table, self.sql))

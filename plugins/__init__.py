@@ -16,5 +16,6 @@ class UdacityPlugin(AirflowPlugin):
         operators.DataQualityOperator,
     ]
     helpers = [
-        helpers.SqlQueries
+        helpers.SqlQueries,
+        helpers.TestHelpers
     ]

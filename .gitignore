@@ -8,3 +8,4 @@ airflow-webserver.pid
 airflow.cfg
 airflow.db
 hello_world_dag.py
+credentials.cfg
