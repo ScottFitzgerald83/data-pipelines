@@ -18,19 +18,22 @@ class DataQualityOperator(BaseOperator):
     @apply_defaults
     def __init__(self,
                  conn_id="",
-                 *args, **kwargs):
+                 *args,
+                 **kwargs):
 
         super(DataQualityOperator, self).__init__(*args, **kwargs)
         self.conn_id = conn_id
 
     def execute(self, context):
-        table = context["table"]
+        tables = context["params"]["tables"]
+        logging.info(f"Received the following tables from the caller: {tables}")
         redshift_hook = PostgresHook("redshift")
-        records = redshift_hook.get_records(f"SELECT COUNT(*) FROM {table}")
-        if not records:
-            raise ValueError(f"Data quality check failed. {table} returned no results")
-        num_records = records[0][0]
+        for table in tables:
+            records = redshift_hook.get_records(f"SELECT COUNT(*) FROM {table}")
+            if not records:
+                return ValueError(f"Data quality check failed. {table} returned no results")
+            num_records = records[0][0]
 
-        if not num_records:
-            raise ValueError(f"No results returns from {table}")
-        logging.info(f"Data quality on table {table} check passed with {records[0][0]} records")
+            if not num_records:
+                return ValueError(f"No results returns from {table}")
+            logging.info(f"Data quality on table {table} check passed with {records[0][0]} records")

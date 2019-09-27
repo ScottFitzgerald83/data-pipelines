@@ -1,3 +1,5 @@
+import logging
+
 from airflow.hooks.postgres_hook import PostgresHook
 from airflow.models import BaseOperator
 from airflow.utils.decorators import apply_defaults
@@ -11,20 +13,35 @@ class LoadDimensionOperator(BaseOperator):
 
     Dimension loads are often done with the truncate-insert pattern where the target table is emptied before the load.
     Thus, you could also have a parameter that allows switching between insert modes when loading dimensions.
-    Fact tables are usually so massive that they should only allow append type functionality.
     """
     ui_color = '#80BD9E'
+    insert_sql = """
+    INSERT INTO {}
+    {}
+        """
 
     @apply_defaults
     def __init__(self,
-                 # Define your operators params (with defaults) here
-                 # Example:
-                 # conn_id = your-connection-name
-                 *args, **kwargs):
+                 conn_id="",
+                 sql="",
+                 *args,
+                 **kwargs):
+
         super(LoadDimensionOperator, self).__init__(*args, **kwargs)
-        # Map params here
-        # Example:
-        # self.conn_id = conn_id
+        self.conn_id = conn_id
+        self.sql = sql
 
     def execute(self, context):
-        self.log.info('LoadDimensionOperator not implemented yet')
+        try:
+            table = context['params']['table']
+        except KeyError:
+            logging.error(msg="Table not found in context", exc_info=True)
+            logging.info(f'context: {context}')
+
+        redshift = PostgresHook(postgres_conn_id=self.conn_id)
+
+        self.log.info("Clearing data from table {table}")
+        redshift.run(f"DELETE FROM {table}")
+
+        self.log.info(f"Loading data into destination Redshift table {table}")
+        redshift.run(LoadDimensionOperator.insert_sql.format(table, self.sql))

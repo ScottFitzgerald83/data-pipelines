@@ -29,33 +29,25 @@ class StageToRedshiftOperator(BaseOperator):
             COPY {}
             FROM '{}'
             IAM_ROLE '{}'
-            IGNOREHEADER {}
-            FORMAT AS JSON 'auto'
+            FORMAT AS JSON '{}'
         """
 
     @apply_defaults
     def __init__(self,
                  conn_id="",
-                 iam_role="",
-                 table="",
-                 s3_bucket="",
-                 s3_key="",
-                 delimiter=",",
-                 ignore_headers=1,
+                 params=None,
                  *args,
                  **kwargs):
         super(StageToRedshiftOperator, self).__init__(*args, **kwargs)
         self.conn_id = conn_id
-        self.iam_role = iam_role
-        self.table = table
-        self.s3_bucket = s3_bucket
-        self.s3_key = s3_key
-        self.delimiter = delimiter
-        self.ignore_headers = ignore_headers
+        self.iam_role = params.get('iam_role', None)
+        self.s3_bucket = params.get('s3_bucket', None)
+        self.s3_key = params.get('s3_key', None)
+        self.table = params.get('table', None)
+        self.json_format = params.get('json_format', 'auto')
 
     def execute(self, context):
         redshift = PostgresHook(postgres_conn_id=self.conn_id)
-
         self.log.info("Clearing data from destination Redshift table")
         redshift.run(f"DELETE FROM {self.table}")
 
@@ -66,7 +58,6 @@ class StageToRedshiftOperator(BaseOperator):
             self.table,
             s3_path,
             self.iam_role,
-            self.ignore_headers,
-            self.delimiter
+            self.json_format
         )
         redshift.run(formatted_sql)

@@ -82,7 +82,7 @@ CREATE TABLE IF NOT EXISTS time
 
 CREATE TABLE IF NOT EXISTS songplays
 (
-    songplay_id INTEGER IDENTITY (0,1) ENCODE ZSTD,
+    songplay_id VARCHAR (254) ENCODE ZSTD,
     start_time  TIMESTAMP ENCODE DELTA32K,
     user_id     INTEGER ENCODE ZSTD,
     level       VARCHAR ENCODE ZSTD,
